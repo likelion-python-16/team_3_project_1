@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}도서 API 앱{% endblock %}</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        nav a { margin-right: 15px; text-decoration: none; color: blue; }
+        .container { margin-top: 20px; }
+    </style>
+</head>
+<body>
+    <nav>
+        <a href="/">홈</a>
+        <a href="/authors/">저자 관리</a>
+        <a href="/books/">도서 관리</a>
+        <a href="/reviews/">리뷰 관리</a>
+        
+    </nav>
+    <hr>
+    <div class="container">
+        {% block content %}
+        {% endblock %}
+    </div>
+</body>
+</html>
