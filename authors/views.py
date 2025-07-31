@@ -3,8 +3,13 @@ from rest_framework import generics
 from .models import Author
 from .serializers import AuthorSerializer
 
+from django.core.paginator import Paginator
+
 def author_list(request):
-    authors = Author.objects.all()
+    author_list = Author.objects.all()
+    paginator = Paginator(author_list, 10)
+    page_number = request.GET.get('page')
+    authors = paginator.get_page(page_number)
     return render(request, 'authors/author_list.html', {'authors': authors})
 
 def author_detail(request, author_id):

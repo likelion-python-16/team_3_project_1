@@ -4,8 +4,14 @@ from rest_framework import permissions, viewsets
 from .models import Review
 from .serializers import ReviewSerializer
 
+from django.core.paginator import Paginator
+
 def review_list(request):
-    return render(request, 'reviews/review_list.html')
+    review_list = Review.objects.all()
+    paginator = Paginator(review_list, 10)
+    page_number = request.GET.get('page')
+    reviews = paginator.get_page(page_number)
+    return render(request, 'reviews/review_list.html', {'reviews': reviews})
 
 class ReviewViewSet(viewsets.ModelViewSet):
     queryset = Review.objects.all()

@@ -16,6 +16,14 @@
     <div id="review-list">
     </div>
 
+    <div class="pagination">
+        <span class="step-links">
+            <button id="prev-page" disabled>이전</button>
+            <span class="current-page">Page <span id="page-num">1</span> of <span id="total-pages">1</span></span>
+            <button id="next-page">다음</button>
+        </span>
+    </div>
+
     <div id="edit-form-container" style="display:none;">
         <h2>리뷰 수정</h2>
         <form id="edit-review-form">
@@ -33,6 +41,9 @@
     </div>
 
     <script>
+        let currentPage = 1;
+        const reviewsPerPage = 10;
+
         function getCookie(name) {
             let cookieValue = null;
             if (document.cookie && document.cookie !== '') {
@@ -49,10 +60,12 @@
         }
         const csrftoken = getCookie('csrftoken');
 
-        async function fetchReviews() {
-            const response = await fetch('/api/reviews/');
-            const reviews = await response.json();
+        async function fetchReviews(page = 1) {
+            const response = await fetch(`/api/reviews/?page=${page}`);
+            const data = await response.json();
+            const reviews = data.results;
             const reviewListDiv = document.getElementById('review-list');
+            reviewListDiv.innerHTML = '';
             reviews.forEach(review => {
                 reviewListDiv.innerHTML += `
                     <div id="review-${review.review_id}">
@@ -62,7 +75,26 @@
                     </div>
                 `;
             });
+
+            const totalPages = Math.ceil(data.count / reviewsPerPage);
+            document.getElementById('page-num').innerText = page;
+            document.getElementById('total-pages').innerText = totalPages;
+
+            document.getElementById('prev-page').disabled = !data.previous;
+            document.getElementById('next-page').disabled = !data.next;
         }
+
+        document.getElementById('prev-page').addEventListener('click', () => {
+            if (currentPage > 1) {
+                currentPage--;
+                fetchReviews(currentPage);
+            }
+        });
+
+        document.getElementById('next-page').addEventListener('click', () => {
+            currentPage++;
+            fetchReviews(currentPage);
+        });
 
         async function fetchReviewsByBook() {
             const bookId = document.getElementById('book_id_filter').value;
@@ -98,7 +130,7 @@
             });
             if (response.ok) {
                 alert('리뷰가 성공적으로 삭제되었습니다!');
-                fetchReviews();
+                fetchReviews(currentPage);
             } else {
                 alert('리뷰 삭제에 실패했습니다.');
             }
@@ -147,12 +179,12 @@
             if (response.ok) {
                 alert('리뷰가 성공적으로 업데이트되었습니다!');
                 cancelEdit();
-                fetchReviews();
+                fetchReviews(currentPage);
             } else {
                 alert('리뷰 업데이트에 실패했습니다.');
             }
         });
 
-        fetchReviews();
+        fetchReviews(currentPage);
     </script>
 {% endblock %}
