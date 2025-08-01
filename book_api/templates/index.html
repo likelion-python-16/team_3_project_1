@@ -9,29 +9,7 @@
         <li><a href="/authors/">저자 관리</a></li>
         <li><a href="/books/">도서 관리</a></li>
     </ul>
+    
 
-    <h2>저자별 도서 통계</h2>
-    <div id="author-stats">
-        <!-- 저자 통계가 여기에 로드됩니다 -->
-    </div>
-
-    <script>
-        async function fetchAuthorStats() {
-            const response = await fetch('/api/dashboard/authors/');
-            const stats = await response.json();
-            const authorStatsDiv = document.getElementById('author-stats');
-            authorStatsDiv.innerHTML = '';
-            if (stats.length > 0) {
-                stats.forEach(stat => {
-                    authorStatsDiv.innerHTML += `
-                        <p>저자: ${stat.author__name}, 도서 수: ${stat.book_count}</p>
-                    `;
-                });
-            } else {
-                authorStatsDiv.innerHTML += '<p>저자 통계를 사용할 수 없습니다.</p>';
-            }
-        }
-
-        fetchAuthorStats(); // 페이지 로드 시 초기 가져오기
-    </script>
+    
 {% endblock %}

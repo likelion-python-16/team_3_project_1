@@ -7,8 +7,8 @@ router = DefaultRouter()
 router.register(r'api', BookViewSet, basename='book')
 
 urlpatterns = [
-    path('', book_list, name='book_list'),
-    path('<int:pk>/', book_detail, name='book_detail'),
-    path('special/', special_books, name='special_books'),
-    path('api/', include(router.urls)),
+    path('', book_list, name='book_list'),                  # 도서 관리 페이지
+    path('<int:pk>/', book_detail, name='book_detail'),     # 도서 상세 페이지
+    path('special/', special_books, name='special_books'),  # 특별한 도서 페이지
+    path('api/', include(router.urls)),                     # 도서 api
 ]

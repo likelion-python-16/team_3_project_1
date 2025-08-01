@@ -6,8 +6,6 @@
   <title>{% block title %}도서 API 앱{% endblock %}</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
-  <!-- 손글씨 느낌의 구글폰트 적용 -->
-  <!-- 손글씨 구글폰트 추가 -->
 <link href="https://fonts.googleapis.com/css2?family=Shadows+Into+Light&family=Nanum+Pen+Script&display=swap" rel="stylesheet">
 <style>
   .handwriting-title {
@@ -49,7 +47,6 @@
 </style>
   <link href="https://fonts.googleapis.com/css2?family=Shadows+Into+Light&family=Dongle:wght@400;700&display=swap" rel="stylesheet">
   <style>
-    /* 감성 손글씨 스타일 */
     .handwriting {
       font-family: 'Shadows Into Light', 'Dongle', 'Pretendard', cursive;
       font-size: 2.7rem;
@@ -66,10 +63,7 @@
       box-shadow: 0 3px 32px 0 #ffedd5cc, 0 1px 2px #dabfa8;
       display: inline-block;
       position: relative;
-      /* 약간 흔들리는 듯한 느낌을 원한다면 아래 주석 해제 */
-      /* animation: handwriting-shake 2.5s infinite alternate; */
     }
-    /* 애니메이션 효과 (선택) */
     @keyframes handwriting-shake {
       0% { transform: rotate(-0.7deg) scale(1.02); }
       15% { transform: rotate(0.7deg) scale(1.03); }
@@ -78,7 +72,6 @@
       60% { transform: rotate(-0.8deg) scale(1.02);}
       100% { transform: rotate(0.2deg) scale(1);}
     }
-    /* 미묘한 연필 밑줄 느낌 */
     .handwriting::after {
       content: '';
       display: block;
@@ -96,17 +89,17 @@
 </head>
 <body class="min-h-screen bg-gradient-to-b from-yellow-100 via-pink-100 to-blue-100 font-[Pretendard]">
 
-  <!-- 네비게이션 -->
+
   <nav class="bg-white/80 shadow-lg sticky top-0 z-20 border-b border-yellow-200 backdrop-blur">
     <div class="container mx-auto flex items-center justify-between py-4 px-8">
       <a href="/" class="flex items-center gap-3 select-none">
         <span class="ml-2 text-2xl font-bold text-black tracking-tight">도서관리</span>
       </a>
       <div class="flex gap-4">
-        <!-- 저자관리: 꽃 아이콘 -->
+
         <a href="/authors/" class="block px-6 py-2 rounded-xl font-semibold bg-white text-gray-800 shadow hover:bg-yellow-200 hover:text-black transition-all border-2 border-yellow-200 relative flex items-center gap-2 group">
           <span class="absolute -left-5 top-1/2 -translate-y-1/2 group-hover:scale-110 transition-transform">
-            <!-- 꽃 SVG -->
+
             <svg width="22" height="22" viewBox="0 0 20 20" fill="none">
               <circle cx="10" cy="10" r="4" fill="#FDE68A"/>
               <circle cx="3" cy="10" r="2.2" fill="#FF90B3"/>
@@ -117,10 +110,8 @@
           </span>
           저자 관리
         </a>
-        <!-- 도서관리: 나비 아이콘 -->
         <a href="/books/" class="block px-6 py-2 rounded-xl font-semibold bg-white text-gray-800 shadow hover:bg-pink-200 hover:text-black transition-all border-2 border-pink-200 relative flex items-center gap-2 group">
           <span class="absolute -left-5 top-1/2 -translate-y-1/2 group-hover:scale-110 transition-transform">
-            <!-- 나비 SVG -->
             <svg width="24" height="20" viewBox="0 0 24 20" fill="none">
               <ellipse cx="7" cy="10" rx="6" ry="8" fill="#A5D8FF"/>
               <ellipse cx="17" cy="10" rx="6" ry="8" fill="#FDB4BF"/>
@@ -134,7 +125,6 @@
     </div>
   </nav>
 
-  <!-- 본문(노트) -->
   <main>
     <section class="max-w-2xl mx-auto mt-16 mb-16 bg-white/90 rounded-3xl shadow-xl border border-gray-200 px-8 py-10 relative
                    before:content-[''] before:absolute before:top-0 before:left-4 before:w-1 before:h-full before:bg-yellow-200 before:rounded-full
@@ -143,17 +133,14 @@
       <div class="absolute left-8 top-8 w-2 h-2 bg-yellow-400 rounded-full shadow"></div>
       <div class="absolute right-8 bottom-8 w-2 h-2 bg-pink-400 rounded-full shadow"></div>
 
-      <!-- ★ 손글씨 스타일의 제목 영역(저자/도서/리뷰 목록 등 하위 템플릿에서 block title로 출력) -->
       {% block page_title %}
       {% endblock %}
 
       {% block content %}
-      <!-- 하위 템플릿에서 컨텐츠가 들어오는 부분 -->
       {% endblock %}
     </section>
   </main>
 
-  <!-- 푸터 -->
   <footer class="w-full text-center text-gray-400 text-xs mt-16 mb-4 select-none font-semibold">
     &copy; 2025 도서 API 앱 · 
     <span class="text-yellow-500">디자인: Tailwind CSS</span>
