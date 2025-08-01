@@ -6,7 +6,7 @@ from .models import Book
 from .serializers import BookSerializer
 from reviews.models import Review
 from reviews.serializers import ReviewSerializer
-from django.db.models import Avg, Count, StdDev, Case, When, Value, FloatField, F, Q
+from django.db.models import Avg, Count, Case, When, Value, FloatField, F, Q
 from django.db.models.functions import Sqrt
 
 from django.core.paginator import Paginator

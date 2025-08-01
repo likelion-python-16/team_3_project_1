@@ -17,7 +17,6 @@ class IsReviewAuthorOrAdmin(permissions.BasePermission):
 
         return False
 
-from django.core.paginator import Paginator
 
 def review_detail(request, pk): # 리뷰 상세 페이지 입니다.
     review = get_object_or_404(Review, pk=pk)
