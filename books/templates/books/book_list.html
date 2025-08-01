@@ -6,14 +6,15 @@
 {% block content %}
     <h1>도서 목록</h1>
 
+    {% if user.is_staff %}
     <button id="show-add-book-form-btn">도서 추가</button>
     <div id="add-book-form-container" style="display:none;">
         <h2>새 도서 추가</h2>
         <form id="add-book-form">
             <label for="title">제목:</label>
             <input type="text" id="title" name="title" required><br><br>
-            <label for="author_id">저자 ID:</label>
-            <input type="number" id="author_id" name="author_id" required><br><br>
+            <label for="author">저자:</label>
+            <select id="author" name="author" required></select><br><br>
             <label for="publication_date">출판일:</label>
             <input type="date" id="publication_date" name="publication_date"><br><br>
             <label for="description">설명:</label>
@@ -22,8 +23,10 @@
             <button type="button" id="cancel-add-book-btn">취소</button>
         </form>
     </div>
+    {% endif %}
 
     <div id="book-list">
+        <!-- 책 목록이 여기에 동적으로 채워집니다. -->
     </div>
 
     <div class="pagination">
@@ -35,257 +38,146 @@
     </div>
 
     <script>
-        let currentPage = 1;
-        const booksPerPage = 10;
+        document.addEventListener('DOMContentLoaded', function() {
+            let currentPage = 1;
+            const booksPerPage = 10;
+            const currentUserId = {{ request.user.id|default:"null" }};
 
-        function getCookie(name) {
-            let cookieValue = null;
-            if (document.cookie && document.cookie !== '') {
-                const cookies = document.cookie.split(';');
-                for (let i = 0; i < cookies.length; i++) {
-                    const cookie = cookies[i].trim();
-                    if (cookie.substring(0, name.length + 1) === (name + '=')) {
-                        cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
-                        break;
+            function getCookie(name) {
+                let cookieValue = null;
+                if (document.cookie && document.cookie !== '') {
+                    const cookies = document.cookie.split(';');
+                    for (let i = 0; i < cookies.length; i++) {
+                        const cookie = cookies[i].trim();
+                        if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                            cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                            break;
+                        }
                     }
                 }
+                return cookieValue;
             }
-            return cookieValue;
-        }
-        const csrftoken = getCookie('csrftoken');
+            const csrftoken = getCookie('csrftoken');
 
-        async function fetchBooks(page = 1) {
-            const response = await fetch(`/api/books/?page=${page}`);
-            const data = await response.json();
-            const books = data.results;
-            const bookListDiv = document.getElementById('book-list');
-            bookListDiv.innerHTML = '';
+            async function fetchBooks(page = 1) {
+                const response = await fetch(`/api/books/?page=${page}`);
+                const data = await response.json();
+                const books = data.results;
+                const bookListDiv = document.getElementById('book-list');
+                bookListDiv.innerHTML = '';
 
-            books.forEach(book => {
-                bookListDiv.innerHTML += `
-                    <div class="book-item" data-book-id="${book.book_id}">
-                        <h3>${book.title}</h3>
-                        <p><strong>저자:</strong> ${book.author_name}</p>
-                        <p><strong>출판일:</strong> ${book.publication_date}</p>
-                        <p><strong>설명:</strong> ${book.description || 'N/A'}</p>
-                        <p><strong>생성일:</strong> ${new Date(book.created_at).toLocaleString()}</p>
-                        <button onclick="showEditBookForm(${book.book_id}, '${encodeURIComponent(book.title)}', ${book.author_id}, '${encodeURIComponent(book.publication_date || '')}', '${encodeURIComponent(book.description || '')}')">수정</button>
-                        <button onclick="deleteBook(${book.book_id})">삭제</button>
+                books.forEach(book => {
+                    const reviewsHtml = book.reviews.map(review => `<p><strong>${review.username}</strong>: ${review.content}</p>`).join('');
 
-                        <div class="edit-book-form-container" id="edit-book-form-${book.book_id}" style="display:none;">
-                            <h4>도서 수정</h4>
-                            <form class="edit-book-form" data-book-id="${book.book_id}">
-                                <label for="edit_title_${book.book_id}">제목:</label>
-                                <input type="text" id="edit_title_${book.book_id}" name="title" value="${book.title}" required><br><br>
-                                <label for="edit_author_id_${book.book_id}">저자 ID:</label>
-                                <input type="number" id="edit_author_id_${book.book_id}" name="author_id" value="${book.author_id}" required><br><br>
-                                <label for="edit_publication_date_${book.book_id}">출판일:</label>
-                                <input type="date" id="edit_publication_date_${book.book_id}" name="publication_date" value="${book.publication_date}"><br><br>
-                                <label for="edit_description_${book.book_id}">설명:</label>
-                                <textarea id="edit_description_${book.book_id}" name="description">${book.description || ''}</textarea><br><br>
-                                <button type="submit">도서 업데이트</button>
-                                <button type="button" onclick="hideEditBookForm(${book.book_id})">취소</button>
-                            </form>
-                        </div>
+                    const bookItemDiv = document.createElement('div');
+                    bookItemDiv.className = 'book-item';
 
-                        <div class="review-section">
-                            <h4>리뷰</h4>
-                            <div id="reviews-for-book-${book.book_id}"></div>
-                            <form class="add-review-form" data-book-id="${book.book_id}">
-                                <input type="hidden" name="book" value="${book.book_id}">
-                                <label for="rating_${book.book_id}">평점 (1-5):</label>
-                                <input type="number" id="rating_${book.book_id}" name="rating" min="1" max="5" required><br><br>
-                                <label for="content_${book.book_id}">내용:</label>
-                                <textarea id="content_${book.book_id}" name="content"></textarea><br><br>
-                                <button type="submit">리뷰 제출</button>
-                            </form>
-                        </div>
-                    </div>
-                    <hr>
-                `;
-            });
-            attachEventListeners();
-            books.forEach(book => fetchReviewsForBook(book.book_id));
+                    const titleLink = document.createElement('a');
+                    titleLink.href = `/books/${book.book_id}/`; // 책 상세 페이지로 직접 연결
+                    titleLink.textContent = book.title;
 
-            const totalPages = Math.ceil(data.count / booksPerPage);
-            document.getElementById('page-num').innerText = page;
-            document.getElementById('total-pages').innerText = totalPages;
+                    const h3 = document.createElement('h3');
+                    h3.appendChild(titleLink);
 
-            document.getElementById('prev-page').disabled = !data.previous;
-            document.getElementById('next-page').disabled = !data.next;
-        }
+                    const authorP = document.createElement('p');
+                    authorP.innerHTML = `<strong>저자:</strong> ${book.author_name}`;
 
-        document.getElementById('prev-page').addEventListener('click', () => {
-            if (currentPage > 1) {
-                currentPage--;
-                fetchBooks(currentPage);
-            }
-        });
+                    const reviewsDiv = document.createElement('div');
+                    reviewsDiv.innerHTML = `<h4>최신 리뷰</h4>${reviewsHtml || '<p>아직 리뷰가 없습니다.</p>'}`;
 
-        document.getElementById('next-page').addEventListener('click', () => {
-            currentPage++;
-            fetchBooks(currentPage);
-        });
+                    bookItemDiv.appendChild(h3);
+                    bookItemDiv.appendChild(authorP);
+                    bookItemDiv.appendChild(reviewsDiv);
 
-        function attachEventListeners() {
-            document.querySelectorAll('.edit-book-form').forEach(form => {
-                form.addEventListener('submit', handleUpdateBook);
-            });
-            document.querySelectorAll('.add-review-form').forEach(form => {
-                form.addEventListener('submit', handleAddReview);
-            });
-        }
+                    bookListDiv.appendChild(bookItemDiv);
+                    bookListDiv.innerHTML += '<hr>';
+                });
 
-        document.getElementById('show-add-book-form-btn').addEventListener('click', () => {
-            document.getElementById('add-book-form-container').style.display = 'block';
-            document.getElementById('show-add-book-form-btn').style.display = 'none';
-        });
+                const totalPages = Math.ceil(data.count / booksPerPage);
+                document.getElementById('page-num').innerText = page;
+                document.getElementById('total-pages').innerText = totalPages;
 
-        document.getElementById('cancel-add-book-btn').addEventListener('click', () => {
-            document.getElementById('add-book-form-container').style.display = 'none';
-            document.getElementById('show-add-book-form-btn').style.display = 'block';
-            document.getElementById('add-book-form').reset();
-        });
-
-        document.getElementById('add-book-form').addEventListener('submit', async (event) => {
-            event.preventDefault();
-            const formData = new FormData(event.target);
-            const bookData = Object.fromEntries(formData.entries());
-
-            if (bookData.author_id) {
-                bookData.author_id = parseInt(bookData.author_id);
+                document.getElementById('prev-page').disabled = !data.previous;
+                document.getElementById('next-page').disabled = !data.next;
             }
 
-            const response = await fetch('/api/books/', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-CSRFToken': csrftoken
-                },
-                body: JSON.stringify(bookData)
-            });
-            if (response.ok) {
-                alert('도서가 성공적으로 추가되었습니다!');
-                fetchBooks(currentPage);
-                event.target.reset();
-                document.getElementById('add-book-form-container').style.display = 'none';
-                document.getElementById('show-add-book-form-btn').style.display = 'block';
-            } else {
-                alert('도서 추가에 실패했습니다.');
-            }
-        });
-
-        function showEditBookForm(bookId, title, author_id, publication_date, description) {
-            const formContainer = document.getElementById(`edit-book-form-${bookId}`);
-            if (formContainer) {
-                document.getElementById(`edit_title_${bookId}`).value = decodeURIComponent(title);
-                document.getElementById(`edit_author_id_${bookId}`).value = author_id;
-                document.getElementById(`edit_publication_date_${bookId}`).value = decodeURIComponent(publication_date);
-                document.getElementById(`edit_description_${bookId}`).value = decodeURIComponent(description);
-                formContainer.style.display = 'block';
-            }
-        }
-
-        function hideEditBookForm(bookId) {
-            const formContainer = document.getElementById(`edit-book-form-${bookId}`);
-            if (formContainer) {
-                formContainer.style.display = 'none';
-            }
-        }
-
-        async function handleUpdateBook(event) {
-            event.preventDefault();
-            const bookId = event.target.dataset.book_id;
-            const formData = new FormData(event.target);
-            const bookData = Object.fromEntries(formData.entries());
-
-            if (bookData.author_id) {
-                bookData.author_id = parseInt(bookData.author_id);
-            }
-
-            const response = await fetch(`/api/books/${bookId}/`, {
-                method: 'PUT',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-CSRFToken': csrftoken
-                },
-                body: JSON.stringify(bookData)
-            });
-            if (response.ok) {
-                alert('도서가 성공적으로 업데이트되었습니다!');
-                fetchBooks(currentPage);
-            } else {
-                alert('도서 업데이트에 실패했습니다.');
-            }
-        }
-
-        async function deleteBook(bookId) {
-            if (!confirm('이 도서를 정말 삭제하시겠습니까?')) {
-                return;
-            }
-            const response = await fetch(`/api/books/${bookId}/`, {
-                method: 'DELETE',
-                headers: {
-                    'X-CSRFToken': csrftoken
+            document.getElementById('prev-page').addEventListener('click', () => {
+                if (currentPage > 1) {
+                    currentPage--;
+                    fetchBooks(currentPage);
                 }
             });
-            if (response.ok) {
-                alert('도서가 성공적으로 삭제되었습니다!');
+
+            document.getElementById('next-page').addEventListener('click', () => {
+                currentPage++;
                 fetchBooks(currentPage);
-            } else {
-                alert('도서 삭제에 실패했습니다.');
-            }
-        }
-
-        async function fetchReviewsForBook(bookId) {
-            const response = await fetch(`/api/books/${bookId}/reviews/`);
-            const reviews = await response.json();
-            const reviewsDiv = document.getElementById(`reviews-for-book-${bookId}`);
-            reviewsDiv.innerHTML = '';
-            if (reviews.length > 0) {
-                reviews.forEach(review => {
-                    reviewsDiv.innerHTML += `
-                        <p><strong>${review.username}</strong> (평점: ${review.rating}/5): ${review.content}</p>
-                    `;
-                });
-            } else {
-                reviewsDiv.innerHTML += '<p>아직 리뷰가 없습니다.</p>';
-            }
-        }
-
-        async function handleAddReview(event) {
-            event.preventDefault();
-            const bookId = event.target.closest('.add-review-form').dataset.bookId;
-            const formData = new FormData(event.target);
-            const reviewData = Object.fromEntries(formData.entries());
-            reviewData.book = parseInt(bookId); 
-            reviewData.rating = parseInt(reviewData.rating);
-
-            if (!reviewData.content) {
-                alert('댓글 내용을 입력해주세요.');
-                return;
-            }
-
-            console.log('Sending review data:', reviewData);
-
-            const response = await fetch('/api/reviews/', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-CSRFToken': csrftoken
-                },
-                body: JSON.stringify(reviewData)
             });
-            if (response.ok) {
-                alert('리뷰가 성공적으로 추가되었습니다!');
-                fetchReviewsForBook(bookId);
-                event.target.reset();
-            } else {
-                const errorData = await response.json();
-                alert(`리뷰 추가에 실패했습니다: ${JSON.stringify(errorData)}`);
-            }
-        }
 
-        fetchBooks(currentPage);
+            {% if user.is_staff %}
+            document.getElementById('show-add-book-form-btn').addEventListener('click', () => {
+                document.getElementById('add-book-form-container').style.display = 'block';
+                document.getElementById('show-add-book-form-btn').style.display = 'none';
+            });
+
+            document.getElementById('cancel-add-book-btn').addEventListener('click', () => {
+                document.getElementById('add-book-form-container').style.display = 'none';
+                document.getElementById('show-add-book-form-btn').style.display = 'block';
+                document.getElementById('add-book-form').reset();
+            });
+
+            const addBookForm = document.getElementById('add-book-form');
+            if (addBookForm) {
+                addBookForm.addEventListener('submit', async (event) => {
+                    event.preventDefault();
+                    const formData = new FormData(event.target);
+                    const publicationDate = formData.get('publication_date');
+                    const bookData = {
+                        title: formData.get('title'),
+                        author: formData.get('author'),
+                        description: formData.get('description'),
+                    };
+
+                    if (publicationDate) {
+                        bookData.publication_date = publicationDate;
+                    }
+
+                    const response = await fetch('/api/books/', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-CSRFToken': csrftoken
+                        },
+                        body: JSON.stringify(bookData)
+                    });
+                    if (response.ok) {
+                        alert('도서가 성공적으로 추가되었습니다!');
+                        fetchBooks(currentPage);
+                        event.target.reset();
+                        document.getElementById('add-book-form-container').style.display = 'none';
+                        document.getElementById('show-add-book-form-btn').style.display = 'block';
+                    } else {
+                        alert('도서 추가에 실패했습니다.');
+                    }
+                });
+            }
+
+            async function fetchAuthorsForForm() {
+                const response = await fetch('/api/authors/');
+                const data = await response.json();
+                const authors = data.results;
+                const authorSelect = document.getElementById('author');
+                authors.forEach(author => {
+                    const option = document.createElement('option');
+                    option.value = author.author_id;
+                    option.textContent = author.author_name;
+                    authorSelect.appendChild(option);
+                });
+            }
+
+            fetchAuthorsForForm();
+            {% endif %}
+
+            fetchBooks(currentPage);
+        });
     </script>
 {% endblock %}

@@ -7,5 +7,5 @@ def index(request):
     return render(request, 'index.html')
 
 def author_book_count(request):
-    author_stats = Author.objects.annotate(book_count=Count('book')).values('name', 'book_count')
+    author_stats = Author.objects.annotate(book_count=Count('books')).values('author_name', 'book_count')
     return JsonResponse(list(author_stats), safe=False)

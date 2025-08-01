@@ -1,5 +1,5 @@
-from django.shortcuts import render
-from rest_framework import viewsets
+from django.shortcuts import render, get_object_or_404
+from rest_framework import viewsets, permissions
 from rest_framework.decorators import action
 from rest_framework.response import Response
 from .models import Book
@@ -18,11 +18,20 @@ def book_list(request):
     books = paginator.get_page(page_number)
     return render(request, 'books/book_list.html', {'books': books})
 
+def book_detail(request, pk):
+    book = get_object_or_404(Book, pk=pk)
+    return render(request, 'books/book_detail.html', {'book': book})
+
 def special_books(request):
     books = BookViewSet.queryset.all()[:10]
     return render(request, 'books/special_books.html', {'books': books})
 
 class BookViewSet(viewsets.ModelViewSet):
+
+    def get_permissions(self):
+        if self.request.method in permissions.SAFE_METHODS:
+            return [permissions.AllowAny()]
+        return [permissions.IsAdminUser()]
     queryset = Book.objects.annotate(
         review_count=Count('reviews', filter=Q(reviews__rating__isnull=False)),
         mean=Avg('reviews__rating', filter=Q(reviews__rating__isnull=False)),
